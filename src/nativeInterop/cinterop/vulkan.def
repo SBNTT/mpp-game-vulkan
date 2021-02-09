@@ -1,0 +1,4 @@
+package = me.sbntt.mppgame.vulkan
+headers = vulkan/vulkan.h
+
+compilerOpts = -DVK_NO_PROTOTYPES

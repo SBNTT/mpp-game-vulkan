@@ -1,0 +1,29 @@
+name: VULKAN_RELEASES_WATCHER
+on:
+  schedule:
+    - cron: 0 1 * * 1
+jobs:
+  check_releases:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Fetch latest vulkan
+        run: |
+          echo LATEST_VULKAN_VERSION=$(curl -sL https://api.github.com/repos/KhronosGroup/Vulkan-Headers/tags | jq -r ".[0].name" | cut -c2-) >> $GITHUB_ENV
+          echo CURRENT_VULKAN_VERSION=$(grep -F -m1 "vulkanVersion=" gradle.properties | tr -d "vulkanVersion=" | tr -d "\"") >> $GITHUB_ENV
+
+      - name: Patch gradle.properties file
+        if: env.CURRENT_VULKAN_VERSION != env.LATEST_VULKAN_VERSION
+        uses: christian-draeger/write-properties@1.0.1
+        with:
+          path: gradle.properties
+          property: vulkanVersion
+          value: ${{ env.LATEST_VULKAN_VERSION }}
+
+      - name: Commit & push changes
+        uses: stefanzweifel/git-auto-commit-action@v4
+        if: env.CURRENT_VULKAN_VERSION != env.LATEST_VULKAN_VERSION
+        with:
+          commit_message: Update vulkanVersion to ${{ env.LATEST_VULKAN_VERSION }}
+          token: ${{ env.GH_PAT }}

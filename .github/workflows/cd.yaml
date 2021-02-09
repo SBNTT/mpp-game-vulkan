@@ -1,0 +1,139 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  checkNewVersion:
+    name: Check if it's a new version
+    runs-on: ubuntu-latest
+    outputs:
+      needDeployment: ${{ steps.checkTag.outputs.exists == 'false' }}
+      libVersion: ${{ env.LIB_VERSION }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Retrieve version of this library
+        run: |
+          echo LIB_VERSION=$(grep -F -m1 "vulkanVersion=" gradle.properties | tr -d "vulkanVersion=" | tr -d "\"") >> $GITHUB_ENV
+
+      - uses: mukunku/tag-exists-action@v1.0.0
+        id: checkTag
+        with:
+          tag: ${{ env.LIB_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish_main:
+    name: Publish mpp module
+    runs-on: ubuntu-latest
+    needs: checkNewVersion
+    if: needs.checkNewVersion.outputs.needDeployment == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
+
+      - name: Publish main
+        run: ./gradlew publishKotlinMultiplatformPublicationToBintrayRepository
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+
+  publish_macosX64:
+    name: Build & publish macosX64
+    runs-on: macos-latest
+    needs: [ checkNewVersion, publish_main ]
+    if: needs.checkNewVersion.outputs.needDeployment == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
+
+      - name: Build
+        run: ./gradlew buildFromMacos
+
+      - name: Publish
+        run: ./gradlew publishFromMacos
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+
+  publish_linuxX64:
+    name: Build & publish linuxX64
+    runs-on: ubuntu-latest
+    needs: [ checkNewVersion, publish_main ]
+    if: needs.checkNewVersion.outputs.needDeployment == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
+
+      - name: Build
+        run: ./gradlew buildFromLinux
+
+      - name: Publish
+        run: ./gradlew publishFromLinux
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+
+  publish_windowsX64:
+    name: Build & publish windowsX64
+    runs-on: windows-latest
+    needs: [ checkNewVersion, publish_main ]
+    if: needs.checkNewVersion.outputs.needDeployment == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+
+      - name: Setup JDK
+        uses: actions/setup-java@v1
+        with:
+          java-version: '8'
+
+      - name: Build
+        run: ./gradlew.bat buildFromWindows
+
+      - name: Publish
+        run: ./gradlew.bat publishFromWindows
+        env:
+          BINTRAY_USER: ${{ secrets.BINTRAY_USER }}
+          BINTRAY_API_KEY: ${{ secrets.BINTRAY_API_KEY }}
+
+  github_release:
+    name: Create a github release
+    runs-on: ubuntu-latest
+    needs: [ checkNewVersion, publish_main, publish_macosX64, publish_windowsX64, publish_linuxX64 ]
+    steps:
+      - name: Create github release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.checkNewVersion.outputs.libVersion}}
