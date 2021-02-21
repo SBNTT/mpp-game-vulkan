@@ -13,4 +13,4 @@ name=vulkan
 bintrayOrg=sbntt
 bintrayRepo=mpp-game
 
-vulkanVersion=1.2.170
+vulkanVersion=1.2.169
