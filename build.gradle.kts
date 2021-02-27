@@ -30,7 +30,7 @@ publishing {
     repositories {
         maven {
             name = "Bintray"
-            url = uri("https://api.bintray.com/maven/$bintrayOrg/$bintrayRepo/${project.name}/;publish=1")
+            url = uri("https://api.bintray.com/maven/$bintrayOrg/$bintrayRepo/${project.name}/;publish=1;override=1")
             credentials {
                 username = System.getenv("BINTRAY_USER")
                 password = System.getenv("BINTRAY_API_KEY")
