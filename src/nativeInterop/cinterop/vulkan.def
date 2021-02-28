@@ -1,8 +1,6 @@
 package = me.sbntt.mppgame.vulkan
 headers = vulkan/vulkan.h
 
-compilerOpts = -DVK_NO_PROTOTYPES
-
 ---
 
 static inline unsigned int vkMakeVersion(uint32_t major, uint32_t minor, uint32_t patch) {
