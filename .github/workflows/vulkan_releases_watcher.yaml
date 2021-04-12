@@ -1,4 +1,4 @@
-name: VULKAN_RELEASES_WATCHER
+name: vulkan_releases_watcher
 on:
   schedule:
     - cron: 0 1 * * 1
