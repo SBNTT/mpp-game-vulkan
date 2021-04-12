@@ -8,7 +8,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.MACHINE_USER_TOKEN }}
 
       - name: Fetch latest vulkan
         run: |
@@ -18,7 +18,7 @@ jobs:
       - name: Patch gradle.properties file
         if: env.CURRENT_VULKAN_VERSION != env.LATEST_VULKAN_VERSION
         run: |
-          sed -i "" -r "s/^[#]*\s*vulkanVersion=.*/vulkanVersion=${{ env.LATEST_VULKAN_VERSION }}/" gradle.properties
+          sed -i 's/vulkanVersion=${{ env.CURRENT_VULKAN_VERSION }}/vulkanVersion=${{ env.LATEST_VULKAN_VERSION }}/g' gradle.properties
 
       - name: Commit & push changes
         uses: stefanzweifel/git-auto-commit-action@v4
