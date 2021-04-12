@@ -48,40 +48,26 @@ tasks {
         )
     }
 
-    val buildFromMacos by registering {
-        tasksFiltering("compile", "", false, "ios", "macos").forEach {
-            dependsOn(this@tasks.getByName(it))
-        }
+    val macosHostTargets = arrayOf("ios", "tvos", "watchos", "macos")
+    val linuxHostTargets = arrayOf("kotlinmultiplatform", "android", "linux", "wasm", "jvm", "js")
+    val windowsHostTargets = arrayOf("mingw")
+
+    val hostSpecificBuild by registering {
+        dependsOn(when {
+            isMacOsHost() -> tasksFiltering("compile", "", false, *macosHostTargets)
+            isLinuxHost() -> tasksFiltering("compile", "", false, *linuxHostTargets)
+            isWindowsHost() -> tasksFiltering("compile", "", false, *windowsHostTargets)
+            else -> throw RuntimeException("Unsupported host")
+        })
     }
 
-    val publishFromMacos by registering {
-        tasksFiltering("publish", "BintrayRepository", false, "ios", "macos").forEach {
-            dependsOn(this@tasks.getByName(it))
-        }
-    }
-
-    val buildFromLinux by registering {
-        (tasksFiltering("compile", "", false, "android", "linux")).forEach {
-            dependsOn(this@tasks.getByName(it))
-        }
-    }
-
-    val publishFromLinux by registering {
-        tasksFiltering("publish", "BintrayRepository", false, "android", "linux").forEach {
-            dependsOn(this@tasks.getByName(it))
-        }
-    }
-
-    val buildFromWindows by registering {
-        tasksFiltering("compile", "", false, "mingw").forEach {
-            dependsOn(this@tasks.getByName(it))
-        }
-    }
-
-    val publishFromWindows by registering {
-        tasksFiltering("publish", "BintrayRepository", false, "mingw").forEach {
-            dependsOn(this@tasks.getByName(it))
-        }
+    val hostSpecificPublish by registering {
+        dependsOn(when {
+            isMacOsHost() -> tasksFiltering("publish", "BintrayRepository", false, *macosHostTargets)
+            isLinuxHost() -> tasksFiltering("publish", "BintrayRepository", false, *linuxHostTargets)
+            isWindowsHost() -> tasksFiltering("publish", "BintrayRepository", false, *windowsHostTargets)
+            else -> throw RuntimeException("Unsupported host")
+        })
     }
 }
 
@@ -139,6 +125,10 @@ fun downloadNativeLibFromGithubAsset(url: String, asset: String, dest: File, run
 fun download(url : String, dest: File) {
     ant.invokeMethod("get", mapOf("src" to url, "dest" to dest))
 }
+
+fun isWindowsHost() = System.getProperty("os.name").startsWith("windows", ignoreCase = true)
+fun isMacOsHost() = System.getProperty("os.name").startsWith("mac os", ignoreCase = true)
+fun isLinuxHost() = System.getProperty("os.name").startsWith("linux", ignoreCase = true)
 
 fun tasksFiltering(prefix: String, suffix: String, test: Boolean, vararg platforms: String) = tasks.names
         .asSequence()
