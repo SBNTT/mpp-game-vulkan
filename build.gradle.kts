@@ -52,9 +52,9 @@ tasks {
 
     val hostSpecificPublish by registering {
         dependsOn(when {
-            isMacOsHost() -> tasksFiltering("publish", "BintrayRepository", false, *macosHostTargets)
-            isLinuxHost() -> tasksFiltering("publish", "BintrayRepository", false, *linuxHostTargets)
-            isWindowsHost() -> tasksFiltering("publish", "BintrayRepository", false, *windowsHostTargets)
+            isMacOsHost() -> tasksFiltering("publish", "${mavenRegistryName}Repository", false, *macosHostTargets)
+            isLinuxHost() -> tasksFiltering("publish", "${mavenRegistryName}Repository", false, *linuxHostTargets)
+            isWindowsHost() -> tasksFiltering("publish", "${mavenRegistryName}Repository", false, *windowsHostTargets)
             else -> throw RuntimeException("Unsupported host")
         })
     }
