@@ -1,7 +1,6 @@
 @file:Suppress("UNUSED_VARIABLE")
 
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
-import org.jetbrains.kotlin.konan.target.*
 
 repositories {
     mavenCentral()
@@ -14,9 +13,12 @@ plugins {
 
 val vulkanVersion: String by project
 
+val mavenRegistryName: String by project
+val mavenRegistryUrl: String by project
+val mavenRegistryUsernameEnvVariable: String by project
+val mavenRegistryPasswordEnvVariable: String by project
+
 val group: String by project
-val bintrayOrg: String by project
-val bintrayRepo: String by project
 
 project.group = group
 project.version = vulkanVersion
@@ -25,19 +27,6 @@ val nativeLibsDir = buildDir.resolve("nativeLibs")
 val downloadsDir  = buildDir.resolve("tmp")
 
 val vulkanDir = nativeLibsDir.resolve("vulkan-$vulkanVersion")
-
-publishing {
-    repositories {
-        maven {
-            name = "Bintray"
-            url = uri("https://api.bintray.com/maven/$bintrayOrg/$bintrayRepo/${project.name}/;publish=1;override=1")
-            credentials {
-                username = System.getenv("BINTRAY_USER")
-                password = System.getenv("BINTRAY_API_KEY")
-            }
-        }
-    }
-}
 
 tasks {
     val setupVulkan by registering {
@@ -92,6 +81,19 @@ kotlin {
                 }
 
                 includeDirs(vulkanDir.resolve("include"))
+            }
+        }
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = mavenRegistryName
+            url = uri(mavenRegistryUrl)
+            credentials {
+                username = System.getenv(mavenRegistryUsernameEnvVariable)
+                password = System.getenv(mavenRegistryPasswordEnvVariable)
             }
         }
     }
